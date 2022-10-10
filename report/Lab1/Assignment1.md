@@ -44,8 +44,41 @@ Finished: SUCCESS
 
 
 ## 1.7 Create a build pipeline
+De pipeline werkte relatief goed, behalve dan de lines `sh 'docker stop samplerunning'` en `sh 'docker rm samplerunning'`, omdat ik deze al in de BuildSampleApp had gestoken zodat ik deze meerdere keren kon uitvoeren. 
 
-
+Jenkins Error:
+```Started by user admin
+[Pipeline] Start of Pipeline
+[Pipeline] node (hide)
+Running on Jenkins in /var/jenkins_home/workspace/SampleAppPipeline
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Preparation)
+[Pipeline] catchError
+[Pipeline] {
+[Pipeline] sh
++ docker stop samplerunning
+samplerunning
+[Pipeline] sh
++ docker rm samplerunning
+samplerunning
+[Pipeline] }
+[Pipeline] // catchError
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build)
+[Pipeline] build (Building BuildSampleApp)
+Scheduling project: BuildSampleApp
+Starting building: BuildSampleApp #17
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+BuildSampleApp #17 completed with status FAILURE (propagate: false to ignore)
+Finished: FAILURE
+```
 
 ## 1.8 Make a change in the application
 
