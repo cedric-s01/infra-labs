@@ -8,7 +8,7 @@ Deze stap ging zeer vlot, hier heb ik geen problemen mee gehad. De applicatie he
 Enkel voor het verwijderen van de docker container was enig opzoekwerk vereist, omdat het enige tijd geleden was dat ik docker gebruikt heb.
 
 
-![SamplerunningSite](infra-2223-cedric-s01\report\Lab1\Images\SamplerunningSite.png)
+![SamplerunningSite](Images\SamplerunningSite.png)
 
 
 ## 1.3: Jenkins Docker Image
@@ -19,7 +19,7 @@ Stap 4 was ook vrij simpel en straightforward, ik heb er geen enkel probleem mee
 
 
 ## 1.5: Using Jenkins to build Application
-Deze stap was lastiger, vooral om te vinden hoe de tempdir folder terug verwijderd moest worden, maar ik heb dit vrij snel kunnen oplossen. Ook de samplerunning-container heb ik kunnen verwijderen door een extra aantal lijnen in de `Execute shell`-categorie van Jenkins te zetten. 
+Deze stap was lastiger, vooral om te vinden hoe de tempdir folder terug verwijderd moest worden, maar ik heb dit vrij snel kunnen oplossen. Ook de samplerunning-container heb ik kunnen verwijderen door een extra aantal lijnen in de `Execute shell`-categorie van Jenkins te zetten. Dit bleek achteraf wel een conflict te geven met de pipeline, dus ik heb deze terug moeten verwijderen. 
 
 
 
@@ -47,7 +47,8 @@ Finished: SUCCESS
 De pipeline werkte relatief goed, behalve dan de lines `sh 'docker stop samplerunning'` en `sh 'docker rm samplerunning'`, omdat ik deze al in de BuildSampleApp had gestoken zodat ik deze meerdere keren kon uitvoeren. 
 
 Jenkins Error:
-```Started by user admin
+```console
+Started by user admin
 [Pipeline] Start of Pipeline
 [Pipeline] node (hide)
 Running on Jenkins in /var/jenkins_home/workspace/SampleAppPipeline
@@ -79,17 +80,16 @@ Starting building: BuildSampleApp #17
 BuildSampleApp #17 completed with status FAILURE (propagate: false to ignore)
 Finished: FAILURE
 ```
+Na dit aan te passen in BuildSampleApp, werkte de pipeline naar behoren. 
 
 ## 1.8 Make a change in the application
+Omdat ik eerst wat sukkelde met het committen en pushen van de verandering in style.css, heeft deze stap vrij lang geduurd. Maar uiteindelijk is het gelukt om de achtergrond te veranderen van `lightsteelblue` naar `purple`. 
 
-
-
-## Reflection
-
+![SampleRunningPurple](Images/SampleRunningChanged.png)
 
 
 ## Resources
 
 List all sources of useful information that you encountered while completing this assignment: books, manuals, HOWTO's, blog posts, etc.
 
-Jenkins password: 8d6a710aff404ca1b568fd69b5f4119f
+- Jenkins password: 8d6a710aff404ca1b568fd69b5f4119f

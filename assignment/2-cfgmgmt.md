@@ -40,7 +40,6 @@ Edit `ansible/site.yml` and add the following:
   roles:        # Enumerate roles to be applied
     - bertvv.rh-base
 ```
-
 The role [bertvv.rh-base](https://galaxy.ansible.com/bertvv/rh-base) is one that is published on [Ansible Galaxy](https://galaxy.ansible.com/), a public repository of Ansible roles. It does some basic configuration tasks for improving security (like enabling SELinux and starting the firewall) and allows the user to specify some desired configuration options like packages to install, users or groups to create, etc. by initializing some role variables. See the role documentation either on Ansible Galaxy (click the Read Me button) or in the role's [public GitHub repository](https://github.com/bertvv/ansible-role-rh-base). It contains an overview of all supported role variables and how to use them.
 
 When you execute the command `vagrant provision srv010`, the playbook `site.yml` will be executed and the role will be applied to the VM. Check the output to verify that some changes (how many and which ones?) were applied to the system.
@@ -272,7 +271,7 @@ Be aware that the router VM takes 4 GB of RAM!
 CSR1kv>
 ```
 
-### Check the default configuration
+### Check the default configuration 
 
 Verify the router configuration by showing an overview of the network interfaces and the routing table. Check the port forwarding rules on the NAT interface. Specifically, find on what port SSH traffic is forwarded to. Verify that you can log in on your router with SSH by opening a Bash terminal on your physical system and executing the following command (replace PORT by the forwarded SSH port number), and using password `cisco123!`:
 
