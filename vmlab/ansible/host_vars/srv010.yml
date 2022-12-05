@@ -1,0 +1,45 @@
+#Basic Config
+
+rhbase_firewall_allow_services: https
+
+
+#MySQL config
+
+# Set this to the user ansible is logging in as - should have root
+# or sudo access
+mysql_user_home: /root
+mysql_user_name: cedric
+mysql_user_password: cedric
+
+# The default root user installed by mysql - almost always root
+mysql_root_home: /root
+mysql_root_username: root
+mysql_root_password: root
+
+# Set this to `true` to forcibly update the root password.
+mysql_root_password_update: true
+mysql_user_password_update: true
+
+mysql_databases:
+  - name: wordpress
+    collation: utf8_general_ci
+    encoding: utf8
+    replicate: 1
+
+mysql_users:
+  - name: wordpress
+    host: 127.0.0.1
+    password: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile') }}"
+    priv: "wordpress.*:ALL"
+
+# Apache Config
+
+httpd_server_name: srv010
+
+httpd_ssl_certificate_file: srv010.crt
+httpd_ssl_certificate_key_file: srv010.key
+
+## Wordpress Config
+
+wordpress_password: 'cedric'
+wordpress_user: 'cedric'
