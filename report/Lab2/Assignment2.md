@@ -94,7 +94,8 @@ Ansible failed to complete successfully. Any error output should be
 visible above. Please fix these errors and try again.
 ```
 
-Ik heb eens gekeken in de Teams chat, waar er stond dat ik een andere sql-rol moest gebruiken, wat ik dan ook gedaan heb. Het duurde even om dit alles op te lossen, en uiteindelijk kreeg ik een nieuwe error, namelijk 
+Ik heb eens gekeken in de Teams chat, waar er stond dat ik een andere sql-rol moest gebruiken, wat ik dan ook gedaan heb. Het duurde even om dit alles op te lossen, en uiteindelijk kreeg ik een nieuwe error, namelijk
+
 ```
 $ vagrant up
 Bringing machine 'srv010' up with 'virtualbox' provider...
@@ -141,7 +142,8 @@ The error output from the command was:
 
 /sbin/mount.vboxsf: mounting failed with the error: No such device
 ```
-Dit was compleet onlogisch in mijn ogen, omdat de VM gisteren wel perfect in orde was, en ik niks had aangepast. Na wat opzoekwerk was dit ook opgelost, dus kon ik eindelijk verder werken aan de opstelling. 
+
+Dit was compleet onlogisch in mijn ogen, omdat de VM gisteren wel perfect in orde was, en ik niks had aangepast. Na wat opzoekwerk was dit ook opgelost, dus kon ik eindelijk verder werken aan de opstelling.
 
 ### 2.3.2. Apache web server
 
@@ -149,11 +151,298 @@ De Apache webserver was vrij snel opgezet, en het certificaat was gemaakt. Maar 
 
 ### 2.3.3. WordPress
 
-Wordpress installeren ging ook vlot, tot ik `https://172.16.128.10/wordpress/` wou bereiken. Hierbij kreeg ik `Error establishing a database connection` als error. Na wat opzoekwerk had ik door dat de credentials in de wp-config file niet overeenkwamen met de database-credentials. Dit heb ik aangepast, en dan kreeg ik `There has been a critical error on this website`. Dit bleek een PHP-error te zijn, dus dan heb ik geprobeerd om de PHP-versie te updaten. Na wat research heb ik in de TI-discord opnieuw mijn toevlucht gezocht, waar men zei dat de nieuwste versie van de wordpress-role niet werkte en je een versie moest terugschakelen. Na dit ook te proberen, zonder resultaat, heb ik in de Teams-chat de suggestie gevonden om de php-json package te installeren, en dit heeft dan eindelijk gewerkt. 
+Wordpress installeren ging ook vlot, tot ik `https://172.16.128.10/wordpress/` wou bereiken. Hierbij kreeg ik `Error establishing a database connection` als error. Na wat opzoekwerk had ik door dat de credentials in de wp-config file niet overeenkwamen met de database-credentials. Dit heb ik aangepast, en dan kreeg ik `There has been a critical error on this website`. Dit bleek een PHP-error te zijn, dus dan heb ik geprobeerd om de PHP-versie te updaten. Na wat research heb ik in de TI-discord opnieuw mijn toevlucht gezocht, waar men zei dat de nieuwste versie van de wordpress-role niet werkte en je een versie moest terugschakelen. Na dit ook te proberen, zonder resultaat, heb ik in de Teams-chat de suggestie gevonden om de php-json package te installeren, en dit heeft dan eindelijk gewerkt.
 
 ## 2.4. DNS
 
+De nieuwe server opzetten met bind verliep vlekkeloos (voorlopig toch), bind was geïnstalleerd en ik kon beginnen aan de volgende configuratie, waar ik al vaak over gehoord had dat deze de lastigste was.
+
 ### Caching name server
+
+Ik heb alle variabelen vlot kunnen instellen, wat met de duidelijke documentatie niet zeer moeilijk was.
+
+- check the service state with `systemctl`
+De service runt zoals verwacht
+```
+[vagrant@srv001 ~]$ sudo systemctl status named
+● named.service - Berkeley Internet Name Domain (DNS)
+    Loaded: loaded (/usr/lib/systemd/system/named.service; enabled; vendor preset: disabled)
+    Active: active (running) since Tue 2022-12-06 10:03:36 UTC; 2s ago
+    Process: 6671 ExecStop=/bin/sh -c /usr/sbin/rndc stop > /dev/null 2>&1 || /bin/kill -TERM $MAINPID (code=exited, status=0/SUCCESS)
+    Process: 6688 ExecStart=/usr/sbin/named -u named -c ${NAMEDCONF} $OPTIONS (code=exited, status=0/SUCCESS)
+    Process: 6684 ExecStartPre=/bin/bash -c if [ ! "$DISABLE_ZONE_CHECKING" == "yes" ]; then /usr/sbin/named-checkconf -z "$NAMEDCONF"; else echo "Checking of zone files is disabled"; fi (code=exited, status=0/SUCCESS)
+    Main PID: 6689 (named)
+    Tasks: 5 (limit: 4949)
+    Memory: 13.9M
+    CGroup: /system.slice/named.service
+           └─6689 /usr/sbin/named -u named -c /etc/named.conf
+
+    Dec 06 10:03:36 srv001 named[6689]: managed-keys-zone: loaded serial 5
+    Dec 06 10:03:36 srv001 named[6689]: zone 0.in-addr.arpa/IN: loaded serial 0
+    Dec 06 10:03:36 srv001 named[6689]: zone 1.0.0.127.in-addr.arpa/IN: loaded serial 0
+    Dec 06 10:03:36 srv001 named[6689]: zone localhost.localdomain/IN: loaded serial 0
+    Dec 06 10:03:36 srv001 named[6689]: zone 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa/IN: loaded serial 0
+    Dec 06 10:03:36 srv001 named[6689]: zone localhost/IN: loaded serial 0
+    Dec 06 10:03:36 srv001 named[6689]: all zones loaded
+    Dec 06 10:03:36 srv001 named[6689]: running
+    Dec 06 10:03:36 srv001 systemd[1]: Started Berkeley Internet Name Domain (DNS).
+    Dec 06 10:03:36 srv001 named[6689]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+```
+- what sockets/ports are in use? (`ss`)
+
+```
+[vagrant@srv001 ~]$ ss -tulnp
+Netid     State       Recv-Q      Send-Q           Local Address:Port           Peer Address:Port     Process
+udp       UNCONN      0           0                    127.0.0.1:53                  0.0.0.0:*
+udp       UNCONN      0           0                127.0.0.53%lo:53                  0.0.0.0:*
+udp       UNCONN      0           0                      0.0.0.0:111                 0.0.0.0:*
+udp       UNCONN      0           0                      0.0.0.0:5355                0.0.0.0:*
+udp       UNCONN      0           0                    127.0.0.1:323                 0.0.0.0:*
+udp       UNCONN      0           0                        [::1]:53                     [::]:*
+udp       UNCONN      0           0                         [::]:111                    [::]:*
+udp       UNCONN      0           0                         [::]:5355                   [::]:*
+udp       UNCONN      0           0                        [::1]:323                    [::]:*
+tcp       LISTEN      0           128                    0.0.0.0:5355                0.0.0.0:*
+tcp       LISTEN      0           128                    0.0.0.0:111                 0.0.0.0:*
+tcp       LISTEN      0           10                   127.0.0.1:53                  0.0.0.0:*
+tcp       LISTEN      0           128                    0.0.0.0:22                  0.0.0.0:*
+tcp       LISTEN      0           128                  127.0.0.1:953                 0.0.0.0:*
+tcp       LISTEN      0           128                       [::]:5355                   [::]:*
+tcp       LISTEN      0           128                       [::]:111                    [::]:*
+tcp       LISTEN      0           10                       [::1]:53                     [::]:*
+tcp       LISTEN      0           128                       [::]:22                     [::]:*
+tcp       LISTEN      0           128                      [::1]:953                    [::]:*
+```
+- check the service logs with `journalctl`
+
+```
+-- Reboot --
+Dec 06 09:43:48 srv001 systemd[1]: Starting Berkeley Internet Name Domain (DNS)...
+Dec 06 09:43:48 srv001 bash[776]: zone localhost.localdomain/IN: loaded serial 0
+Dec 06 09:43:48 srv001 bash[776]: zone localhost/IN: loaded serial 0
+Dec 06 09:43:48 srv001 bash[776]: zone 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 bash[776]: zone 1.0.0.127.in-addr.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 bash[776]: zone 0.in-addr.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: starting BIND 9.11.36-RedHat-9.11.36-5.el8_7.2 (Extended Support Version) <id:68dbd5b>
+Dec 06 09:43:48 srv001 named[800]: running on Linux x86_64 4.18.0-305.17.1.el8_4.x86_64 #1 SMP Wed Sep 8 03:45:51 EDT 2021
+Dec 06 09:43:48 srv001 named[800]: built with '--build=x86_64-redhat-linux-gnu' '--host=x86_64-redhat-linux-gnu' '--program-prefix=' '--disable-dependency-tracking' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--datadir=/usr/share' '--includedir=/usr/include' '--libdir=/usr/lib64' '--libexecdir=/usr/libexec' '--sharedstatedir=/var/lib' '--mandir=/usr/share/man' '--infodir=/usr/share/info' '--with-python=/usr/libexec/platform-python' '--with-libtool' '--localstatedir=/var' '--enable-threads' '--enable-ipv6' '--enable-filter-aaaa' '--with-pic' '--disable-static' '--includedir=/usr/include/bind9' '--with-tuning=large' '--with-libidn2' '--enable-openssl-hash' '--with-geoip2' '--enable-native-pkcs11' '--with-pkcs11=/usr/lib64/pkcs11/libsofthsm2.so' '--with-dlopen=yes' '--with-dlz-ldap=yes' '--with-dlz-postgres=yes' '--with-dlz-mysql=yes' '--with-dlz-files>
+Dec 06 09:43:48 srv001 named[800]: running as: named -u named -c /etc/named.conf
+Dec 06 09:43:48 srv001 named[800]: compiled by GCC 8.5.0 20210514 (Red Hat 8.5.0-15)
+Dec 06 09:43:48 srv001 named[800]: compiled with OpenSSL version: OpenSSL 1.1.1k  FIPS 25 Mar 2021
+Dec 06 09:43:48 srv001 named[800]: linked to OpenSSL version: OpenSSL 1.1.1g FIPS  21 Apr 2020
+Dec 06 09:43:48 srv001 named[800]: compiled with libxml2 version: 2.9.7
+Dec 06 09:43:48 srv001 named[800]: linked to libxml2 version: 20907
+Dec 06 09:43:48 srv001 named[800]: compiled with libjson-c version: 0.13.1
+Dec 06 09:43:48 srv001 named[800]: linked to libjson-c version: 0.13.1
+Dec 06 09:43:48 srv001 named[800]: compiled with zlib version: 1.2.11
+Dec 06 09:43:48 srv001 named[800]: linked to zlib version: 1.2.11
+Dec 06 09:43:48 srv001 named[800]: threads support is enabled
+Dec 06 09:43:48 srv001 named[800]: ----------------------------------------------------
+Dec 06 09:43:48 srv001 named[800]: BIND 9 is maintained by Internet Systems Consortium,
+Dec 06 09:43:48 srv001 named[800]: Inc. (ISC), a non-profit 501(c)(3) public-benefit
+Dec 06 09:43:48 srv001 named[800]: corporation.  Support and training for BIND 9 are
+Dec 06 09:43:48 srv001 named[800]: available at https://www.isc.org/support
+Dec 06 09:43:48 srv001 named[800]: ----------------------------------------------------
+Dec 06 09:43:48 srv001 named[800]: adjusted limit on open files from 262144 to 1048576
+Dec 06 09:43:48 srv001 named[800]: found 2 CPUs, using 2 worker threads
+Dec 06 09:43:48 srv001 named[800]: using 1 UDP listener per interface
+Dec 06 09:43:48 srv001 named[800]: using up to 21000 sockets
+Dec 06 09:43:48 srv001 named[800]: loading configuration from '/etc/named.conf'
+Dec 06 09:43:48 srv001 named[800]: unable to open '/etc/named.iscdlv.key'; using built-in keys instead
+Dec 06 09:43:48 srv001 named[800]: looking for GeoIP2 databases in '/usr/share/GeoIP'
+Dec 06 09:43:48 srv001 named[800]: opened GeoIP2 database '/usr/share/GeoIP/GeoLite2-Country.mmdb'
+Dec 06 09:43:48 srv001 named[800]: opened GeoIP2 database '/usr/share/GeoIP/GeoLite2-City.mmdb'
+Dec 06 09:43:48 srv001 named[800]: using default UDP/IPv4 port range: [32768, 60999]
+Dec 06 09:43:48 srv001 named[800]: using default UDP/IPv6 port range: [32768, 60999]
+Dec 06 09:43:48 srv001 named[800]: listening on IPv4 interface lo, 127.0.0.1#53
+Dec 06 09:43:48 srv001 named[800]: listening on IPv6 interface lo, ::1#53
+Dec 06 09:43:48 srv001 named[800]: generating session key for dynamic DNS
+Dec 06 09:43:48 srv001 named[800]: sizing zone task pool based on 5 zones
+Dec 06 09:43:48 srv001 named[800]: none:105: 'max-cache-size 90%' - setting to 728MB (out of 809MB)
+Dec 06 09:43:48 srv001 named[800]: set up managed keys zone for view _default, file '/var/named/dynamic/managed-keys.bind'
+Dec 06 09:43:48 srv001 named[800]: none:105: 'max-cache-size 90%' - setting to 728MB (out of 809MB)
+Dec 06 09:43:48 srv001 named[800]: configuring command channel from '/etc/rndc.key'
+Dec 06 09:43:48 srv001 named[800]: command channel listening on 127.0.0.1#953
+Dec 06 09:43:48 srv001 named[800]: configuring command channel from '/etc/rndc.key'
+Dec 06 09:43:48 srv001 named[800]: command channel listening on ::1#953
+Dec 06 09:43:48 srv001 named[800]: managed-keys-zone: journal file is out of date: removing journal file
+Dec 06 09:43:48 srv001 named[800]: managed-keys-zone: loaded serial 4
+Dec 06 09:43:48 srv001 named[800]: zone 1.0.0.127.in-addr.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: zone 0.in-addr.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: zone localhost/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: zone 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: zone localhost.localdomain/IN: loaded serial 0
+Dec 06 09:43:48 srv001 named[800]: all zones loaded
+Dec 06 09:43:48 srv001 systemd[1]: Started Berkeley Internet Name Domain (DNS).
+Dec 06 09:43:48 srv001 named[800]: running
+Dec 06 09:43:48 srv001 named[800]: network unreachable resolving './DNSKEY/IN': 8.8.8.8#53
+Dec 06 09:43:48 srv001 named[800]: managed-keys-zone: Unable to fetch DNSKEY set '.': SERVFAIL
+Dec 06 10:03:36 srv001 systemd[1]: Stopping Berkeley Internet Name Domain (DNS)...
+Dec 06 10:03:36 srv001 named[800]: received control channel command 'stop'
+Dec 06 10:03:36 srv001 named[800]: shutting down: flushing changes
+Dec 06 10:03:36 srv001 named[800]: stopping command channel on 127.0.0.1#953
+Dec 06 10:03:36 srv001 named[800]: stopping command channel on ::1#953
+Dec 06 10:03:36 srv001 named[800]: no longer listening on 127.0.0.1#53
+Dec 06 10:03:36 srv001 named[800]: no longer listening on ::1#53
+Dec 06 10:03:36 srv001 named[800]: exiting
+Dec 06 10:03:36 srv001 systemd[1]: named.service: Succeeded.
+Dec 06 10:03:36 srv001 systemd[1]: Stopped Berkeley Internet Name Domain (DNS).
+Dec 06 10:03:36 srv001 systemd[1]: Starting Berkeley Internet Name Domain (DNS)...
+Dec 06 10:03:36 srv001 bash[6684]: zone localhost.localdomain/IN: loaded serial 0
+Dec 06 10:03:36 srv001 bash[6684]: zone localhost/IN: loaded serial 0
+Dec 06 10:03:36 srv001 bash[6684]: zone 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 bash[6684]: zone 1.0.0.127.in-addr.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 bash[6684]: zone 0.in-addr.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: starting BIND 9.11.36-RedHat-9.11.36-5.el8_7.2 (Extended Support Version) <id:68dbd5b>
+Dec 06 10:03:36 srv001 named[6689]: running on Linux x86_64 4.18.0-305.17.1.el8_4.x86_64 #1 SMP Wed Sep 8 03:45:51 EDT 2021
+Dec 06 10:03:36 srv001 named[6689]: built with '--build=x86_64-redhat-linux-gnu' '--host=x86_64-redhat-linux-gnu' '--program-prefix=' '--disable-dependency-tracking' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--datadir=/usr/share' '--includedir=/usr/include' '--libdir=/usr/lib64' '--libexecdir=/usr/libexec' '--sharedstatedir=/var/lib' '--mandir=/usr/share/man' '--infodir=/usr/share/info' '--with-python=/usr/libexec/platform-python' '--with-libtool' '--localstatedir=/var' '--enable-threads' '--enable-ipv6' '--enable-filter-aaaa' '--with-pic' '--disable-static' '--includedir=/usr/include/bind9' '--with-tuning=large' '--with-libidn2' '--enable-openssl-hash' '--with-geoip2' '--enable-native-pkcs11' '--with-pkcs11=/usr/lib64/pkcs11/libsofthsm2.so' '--with-dlopen=yes' '--with-dlz-ldap=yes' '--with-dlz-postgres=yes' '--with-dlz-mysql=yes' '--with-dlz-file>
+Dec 06 10:03:36 srv001 named[6689]: running as: named -u named -c /etc/named.conf
+Dec 06 10:03:36 srv001 named[6689]: compiled by GCC 8.5.0 20210514 (Red Hat 8.5.0-15)
+Dec 06 10:03:36 srv001 named[6689]: compiled with OpenSSL version: OpenSSL 1.1.1k  FIPS 25 Mar 2021
+Dec 06 10:03:36 srv001 named[6689]: linked to OpenSSL version: OpenSSL 1.1.1g FIPS  21 Apr 2020
+Dec 06 10:03:36 srv001 named[6689]: compiled with libxml2 version: 2.9.7
+Dec 06 10:03:36 srv001 named[6689]: linked to libxml2 version: 20907
+Dec 06 10:03:36 srv001 named[6689]: compiled with libjson-c version: 0.13.1
+Dec 06 10:03:36 srv001 named[6689]: linked to libjson-c version: 0.13.1
+Dec 06 10:03:36 srv001 named[6689]: compiled with zlib version: 1.2.11
+Dec 06 10:03:36 srv001 named[6689]: linked to zlib version: 1.2.11
+Dec 06 10:03:36 srv001 named[6689]: threads support is enabled
+Dec 06 10:03:36 srv001 named[6689]: ----------------------------------------------------
+Dec 06 10:03:36 srv001 named[6689]: BIND 9 is maintained by Internet Systems Consortium,
+Dec 06 10:03:36 srv001 named[6689]: Inc. (ISC), a non-profit 501(c)(3) public-benefit
+Dec 06 10:03:36 srv001 named[6689]: corporation.  Support and training for BIND 9 are
+Dec 06 10:03:36 srv001 named[6689]: available at https://www.isc.org/support
+Dec 06 10:03:36 srv001 named[6689]: ----------------------------------------------------
+Dec 06 10:03:36 srv001 named[6689]: adjusted limit on open files from 262144 to 1048576
+Dec 06 10:03:36 srv001 named[6689]: found 2 CPUs, using 2 worker threads
+Dec 06 10:03:36 srv001 named[6689]: using 1 UDP listener per interface
+Dec 06 10:03:36 srv001 named[6689]: using up to 21000 sockets
+Dec 06 10:03:36 srv001 named[6689]: loading configuration from '/etc/named.conf'
+Dec 06 10:03:36 srv001 named[6689]: unable to open '/etc/named.iscdlv.key'; using built-in keys instead
+Dec 06 10:03:36 srv001 named[6689]: looking for GeoIP2 databases in '/usr/share/GeoIP'
+Dec 06 10:03:36 srv001 named[6689]: opened GeoIP2 database '/usr/share/GeoIP/GeoLite2-Country.mmdb'
+Dec 06 10:03:36 srv001 named[6689]: opened GeoIP2 database '/usr/share/GeoIP/GeoLite2-City.mmdb'
+Dec 06 10:03:36 srv001 named[6689]: using default UDP/IPv4 port range: [32768, 60999]
+Dec 06 10:03:36 srv001 named[6689]: using default UDP/IPv6 port range: [32768, 60999]
+Dec 06 10:03:36 srv001 named[6689]: listening on IPv4 interface lo, 127.0.0.1#53
+Dec 06 10:03:36 srv001 named[6689]: listening on IPv6 interface lo, ::1#53
+Dec 06 10:03:36 srv001 named[6689]: generating session key for dynamic DNS
+Dec 06 10:03:36 srv001 named[6689]: sizing zone task pool based on 5 zones
+Dec 06 10:03:36 srv001 named[6689]: none:105: 'max-cache-size 90%' - setting to 728MB (out of 809MB)
+Dec 06 10:03:36 srv001 named[6689]: set up managed keys zone for view _default, file '/var/named/dynamic/managed-keys.bind'
+Dec 06 10:03:36 srv001 named[6689]: none:105: 'max-cache-size 90%' - setting to 728MB (out of 809MB)
+Dec 06 10:03:36 srv001 named[6689]: configuring command channel from '/etc/rndc.key'
+Dec 06 10:03:36 srv001 named[6689]: command channel listening on 127.0.0.1#953
+Dec 06 10:03:36 srv001 named[6689]: configuring command channel from '/etc/rndc.key'
+Dec 06 10:03:36 srv001 named[6689]: command channel listening on ::1#953
+Dec 06 10:03:36 srv001 named[6689]: managed-keys-zone: journal file is out of date: removing journal file
+Dec 06 10:03:36 srv001 named[6689]: managed-keys-zone: loaded serial 5
+Dec 06 10:03:36 srv001 named[6689]: zone 0.in-addr.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: zone 1.0.0.127.in-addr.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: zone localhost.localdomain/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: zone 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: zone localhost/IN: loaded serial 0
+Dec 06 10:03:36 srv001 named[6689]: all zones loaded
+Dec 06 10:03:36 srv001 named[6689]: running
+Dec 06 10:03:36 srv001 systemd[1]: Started Berkeley Internet Name Domain (DNS).
+Dec 06 10:03:36 srv001 named[6689]: managed-keys-zone: No DNSKEY RRSIGs found for '.': success
+```
+- look at the contents of the main configuration file
+
+```
+[vagrant@srv001 ~]$ sudo cat /etc/named.conf
+//
+// named.conf
+//
+//
+// Ansible managed
+//
+//
+options {
+  listen-on port 53 { 127.0.0.1; };
+  listen-on-v6 port 53 { ::1; };
+  directory   "/var/named";
+  dump-file   "/var/named/data/cache_dump.db";
+  statistics-file "/var/named/data/named_stats.txt";
+  memstatistics-file "/var/named/data/named_mem_stats.txt";
+  allow-query     { any; };
+
+  recursion yes;
+  allow-recursion { any; };
+  forwarders { 8.8.8.8; };  forward only;
+  rrset-order { order random; };
+
+  dnssec-validation True;
+
+  /* Path to ISC DLV key */
+  bindkeys-file "/etc/named.iscdlv.key";
+
+  managed-keys-directory "/var/named/dynamic";
+
+  pid-file "/run/named/named.pid";
+  session-keyfile "/run/named/session.key";
+};
+
+
+logging {
+  channel default_debug {
+    file "data/named.run";
+    severity dynamic;
+    print-time yes;
+  };
+};
+
+include "/etc/named.root.key";
+include "/etc/named.rfc1912.zones";
+```
+- send a query to the DNS service with `dig` and check if it responds
+
+```
+[vagrant@srv001 ~]$ dig google.com
+
+; <<>> DiG 9.11.36-RedHat-9.11.36-5.el8_7.2 <<>> google.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 10991
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 4, ADDITIONAL: 9
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 484ae45016c066c509c6e904638f1a824a4c05aca3dd9f42 (good)
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             186     IN      A       142.251.36.14
+
+;; AUTHORITY SECTION:
+google.com.             36909   IN      NS      ns3.google.com.
+google.com.             36909   IN      NS      ns4.google.com.
+google.com.             36909   IN      NS      ns2.google.com.
+google.com.             36909   IN      NS      ns1.google.com.
+
+;; ADDITIONAL SECTION:
+ns4.google.com.         85292   IN      A       216.239.38.10
+ns3.google.com.         333117  IN      A       216.239.36.10
+ns1.google.com.         80550   IN      A       216.239.32.10
+ns2.google.com.         7886    IN      A       216.239.34.10
+ns4.google.com.         87386   IN      AAAA    2001:4860:4802:38::a
+ns3.google.com.         333117  IN      AAAA    2001:4860:4802:36::a
+ns1.google.com.         342345  IN      AAAA    2001:4860:4802:32::a
+ns2.google.com.         7886    IN      AAAA    2001:4860:4802:34::a
+
+;; Query time: 2 msec
+;; SERVER: 10.0.2.3#53(10.0.2.3)
+;; WHEN: Tue Dec 06 10:33:38 UTC 2022
+;; MSG SIZE  rcvd: 331
+```
+- send a query from your physical system and check if it responds
+
+```
+
+```
+- check the logs again, can you see which queries were sent a what response the server gave?
+
 
 ### Authoritative name server
 

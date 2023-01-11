@@ -10,6 +10,11 @@
   netmask: 255.255.0.0
   box: bento/almalinux-8
 
+- name: srv001
+  ip: 172.16.128.11
+  netmask: 255.255.0.0
+  box: bento/almalinux-8
+
 # Example of a more elaborate host definition
 # - name: srv002
 #   box: bento/fedora-28

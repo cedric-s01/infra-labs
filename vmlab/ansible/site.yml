@@ -9,5 +9,6 @@
     - bertvv.httpd
     - bertvv.wordpress
 - hosts: srv001
+  roles:
     - bertvv.bind
 

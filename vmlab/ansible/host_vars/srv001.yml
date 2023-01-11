@@ -1,0 +1,36 @@
+#Bind Config
+bind_allow_query: ['any']
+
+bind_forward_only: true
+
+bind_recursion: true
+
+bind_dnssec_enable: false
+
+
+#List IP adresses of one or two forwarders
+bind_forwarders: 
+  - 8.8.8.8
+
+# Zone Config
+bind-zones:
+  - name: infra.lan
+    primaries: 172.16.128.11
+    name_servers: srv001
+    
+    
+    hosts:
+      - name: srv001
+        ip: 172.16.128.10
+        aliases: dnsserver
+
+      - name: '@'
+        ip: 172.16.128.10
+        aliases: 
+          - srv010
+          - webserver
+    
+    
+    networks:
+      - '172.16'
+        
