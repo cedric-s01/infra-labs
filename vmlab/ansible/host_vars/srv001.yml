@@ -1,36 +1,72 @@
-#Bind Config
-bind_allow_query: ['any']
+# #Bind Config
+# bind_allow_query: ["any"]
 
-bind_forward_only: true
+# bind_forward_only: true
 
+# bind_recursion: true
+
+# bind_dnssec_enable: false
+
+# #List IP adresses of one or two forwarders
+# bind_forwarders:
+#   - 8.8.8.8
+
+# # Zone Config
+# bind-zones:
+#   - name: infra.lan
+#     networks:
+#       - "172.16"
+#     primaries: 172.16.128.2
+#     hosts:
+#       - name: srv001
+#         ip: 172.16.128.2
+#         aliases: dnsserver
+#       - name: "@"
+#         ip: 172.16.128.10
+#         aliases: webserver
+#       - name: srv003
+#         ip: 172.16.128.3
+#         aliases: dhcpserver
+
+rhbase_firewall_allow_services:
+  - http
+  - https
+  - dns
+bind_allow_query: ["any"]
+bind_listen_ipv4: ["any"]
 bind_recursion: true
-
+bind_allow_recursion: ["any"]
+bind_forward_only: true
+bind_forwarders: [10.0.2.3, 1.1.1.1]
 bind_dnssec_enable: false
-
-
-#List IP adresses of one or two forwarders
-bind_forwarders: 
-  - 8.8.8.8
-
-# Zone Config
-bind-zones:
+bind_dnssec_validation: false
+bind_zones:
   - name: infra.lan
-    primaries: 172.16.128.11
-    name_servers: srv001
-    
-    
-    hosts:
-      - name: srv001
-        ip: 172.16.128.10
-        aliases: dnsserver
-
-      - name: '@'
-        ip: 172.16.128.10
-        aliases: 
-          - srv010
-          - webserver
-    
-    
+    primaries:
+      - 172.16.128.2
+    name_servers:
+      - srv001
     networks:
-      - '172.16'
-        
+      - "172.16"
+    hosts:
+      - name: r001
+        ip: 172.16.255.254
+        aliases:
+          - router
+      - name: srv001
+        ip: 172.16.128.2
+        aliases:
+          - nameserver
+      - name: srv003
+        ip: 172.16.128.3
+        aliases:
+          - dhcp
+      - name: srv004
+        ip: 172.16.128.4
+        aliases:
+          - monitor
+      - name: "@"
+        ip: 172.16.128.10
+        aliases:
+          - www
+          - srv010

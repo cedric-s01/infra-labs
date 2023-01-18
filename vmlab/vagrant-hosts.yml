@@ -4,17 +4,25 @@
 # possible settings, see the documentation at
 # <https://github.com/bertvv/ansible-skeleton>
 ---
-
 - name: srv010
   ip: 172.16.128.10
   netmask: 255.255.0.0
-  box: bento/almalinux-8
+  box: bento/almalinux-9
 
 - name: srv001
-  ip: 172.16.128.11
+  ip: 172.16.128.2
   netmask: 255.255.0.0
-  box: bento/almalinux-8
+  box: bento/almalinux-9
 
+- name: srv003
+  ip: 172.16.128.3
+  netmask: 255.255.0.0
+  box: bento/almalinux-9
+
+- name: srv004
+  ip: 172.16.128.4
+  netmask: 255.255.0.0
+  box: bento/almalinux-9
 # Example of a more elaborate host definition
 # - name: srv002
 #   box: bento/fedora-28

@@ -436,32 +436,222 @@ ns2.google.com.         7886    IN      AAAA    2001:4860:4802:34::a
 ;; WHEN: Tue Dec 06 10:33:38 UTC 2022
 ;; MSG SIZE  rcvd: 331
 ```
-- send a query from your physical system and check if it responds
-
-```
-
-```
-- check the logs again, can you see which queries were sent a what response the server gave?
 
 
 ### Authoritative name server
 
+Deze stap deed allesbehalve wat ik had gehoopt, omdat de Ansible-configuratie niet leek te werken. Ik had het `srv001.yml` aangepast en er werden geen zichtbare veranderingen doorgevoerd in `named.conf`. Ook in `/etc/named.rfc1912.zones` waren er geen zones te zien met de juiste naam. Ik weet niet hoe of waarom dit niet gebeurde, maar het verklaarde wel waarom ik bvb geen toegang had tot `www.infra.lan`. 
+
+
 ## 2.5. DHCP
+
+De configuratie van DHCP leek vlot te gaan, mede door de documentatie van Mr. Van Vreckem, maar bij `vagrant provision` kreeg ik de volgende error:
+
+```console
+TASK [bertvv.dhcp : Install config file] ***************************************
+fatal: [srv003]: FAILED! => {"changed": false, "checksum": "c377de397ff80e574037ba65907e8a9b91e60941", "exit_status": 1, "msg": "failed to validate", "stderr": "Internet Systems Consortium DHCP Server 4.3.6\nCopyright 2004-2017 Internet Systems Consortium.\nAll rights reserved.\nFor info, please visit https://www.isc.org/software/dhcp/\n/home/vagrant/.ansible/tmp/ansible-tmp-1673962149.8183534-12129-16239283453081/source line 19: [ (91): expecting IP address or hostname\n  option routers [\n                  ^\nConfiguration file errors encountered -- exiting\n\nThis version of ISC DHCP is based on the release available\non ftp.isc.org. Features have been added and other changes\nhave been made to the base software release in order to make\nit work better with this distribution.\n\nPlease report issues with this software via: \nhttps://bugs.almalinux.org/\n\nexiting.\n", "stderr_lines": ["Internet Systems Consortium DHCP Server 4.3.6", "Copyright 2004-2017 Internet Systems Consortium.", "All rights reserved.", "For info, please visit https://www.isc.org/software/dhcp/", "/home/vagrant/.ansible/tmp/ansible-tmp-1673962149.8183534-12129-16239283453081/source line 19: [ (91): expecting IP address or hostname", "  option routers [", "
+  ^", "Configuration file errors encountered -- exiting", "", "This version of ISC DHCP is based on the release available", "on ftp.isc.org. Features have been added and other changes", "have been made to the base software release in order to make", "it work better with this distribution.", "", "Please report issues with this software via: ", "https://bugs.almalinux.org/", "", "exiting."], "stdout": "", "stdout_lines": []}
+
+PLAY RECAP *********************************************************************
+srv003                     : ok=34   changed=0    unreachable=0    failed=1    skipped=23   rescued=0    ignored=0
+
+
+Ansible failed to complete successfully. Any error output should be
+visible above. Please fix these errors and try again.
+```
+Omdat dit niet duidelijk leesbaar was heb ik even moeten zoeken, maar uiteindelijk heb ik de oplossing gevonden, namelijk een syntaxfout in `srv003.yml`. Dit heb ik dan aangepast en dan werkte het naar behoren.
 
 ## 2.6. Router
 
 ### Create and boot the router VM
 
+De router-VM aanmaken was simpel, aangezien ik dit al vaak genoeg had moeten doen. Ook de .iso file toevoegen was niet moeilijk, dit ging zeer vlot. Het installatieproces was vrij lang, zoals vermeld in de opgave. 
+Het IP-adres van het NAT-interface van de VM is `10.0.2.15`, zoals altijd het geval is bij een NAT-adapter van VirtualBox.
+
 ### Check the default configuration
+
+De default configuration is als volgt:
+```console
+CSR1kv#show ip int brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       10.0.2.15       YES DHCP   up                    up
+GigabitEthernet2       unassigned      YES unset  administratively down down
+CSR1kv#show ip route
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2, m - OMP
+       n - NAT, Ni - NAT inside, No - NAT outside, Nd - NAT DIA
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       H - NHRP, G - NHRP registered, g - NHRP registration summary
+       o - ODR, P - periodic downloaded static route, l - LISP
+       a - application route
+       + - replicated route, % - next hop override, p - overrides from PfR
+       & - replicated local route overrides by connected
+
+Gateway of last resort is 10.0.2.2 to network 0.0.0.0
+
+S*    0.0.0.0/0 [254/0] via 10.0.2.2
+      10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+C        10.0.2.0/24 is directly connected, GigabitEthernet1
+L        10.0.2.15/32 is directly connected, GigabitEthernet1
+CSR1kv#
+```
+
+Om te ssh'en was het ook redelijk vanzelfsprekend, omdat het juiste commando in de opgave stond. 
+
+```console
+vmlab> ssh -o  StrictHostKeyChecking=no -p 5022 cisco@127.0.0.1
+Warning: Permanently added '[127.0.0.1]:5022' (RSA) to the list of known hosts.
+(cisco@127.0.0.1) Password:
+
+*                                           *
+**                                         **
+***                                       ***
+***  Cisco Networking Academy             ***
+***   Emerging Technologies Workshop:     ***
+***    Model Driven Programmability       ***
+***                                       ***
+***  This software is provided for        ***
+***   Educational Purposes                ***
+***    Only in Networking Academies       ***
+***                                       ***
+**                                         **
+*                                           *
+
+
+CSR1kv#
+```
+
 
 ### Managing the router with Ansible
 
+Deze stap begon al goed, omdat ik het `inventory.yml`bestand nergens kon terugvinden in de `.vagrant/`-map. Dit heb ik dan ook gelaten voor wat het was, omdat ik niet echt veel treuzelen kon veroorloven. Vervolgens heb ik het bestand voor de router aangemaakt in de `/ansible`-map, en dit proberen runnen op de `srv001`-server omdat ik een Windows-computer heb en er dus geen Ansible op geïnstalleerd is. Eerst moest ik nog Paramiko installeren, en ervoor zorgen dat dit persistent aanwezig was. Ik kreeg echter nog steeds een error, namelijk:
+```console
+[vagrant@srv001 ansible]$ ansible -i inventory.yml -m ios_facts -a "gather_subset=all" all
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+CSR1kv | FAILED! => {
+    "changed": false,
+    "msg": "[Errno None] Unable to connect to port 5022 on 127.16.0.1"
+}
+```
+Na uitvoerig bevestigen dat ik wel kon inloggen via ssh, heb ik gezien dat er een typfout in mijn `inventory.yml`-bestand zat. Na deze eruit te halen probeerde ik opnieuw om het uit te voeren, en dan kreeg ik de volgende error:
+```console
+[vagrant@srv001 ansible]$ sudo ansible -i inventory.yml -m ios_facts -a "gather_subset=all" all
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+CSR1kv | FAILED! => {
+    "changed": false,
+    "msg": "paramiko: The authenticity of host '[172.16.0.1]:5022' can't be established.\nThe ssh-rsa key fingerprint is b'91fdb5f07641488293aa80d75b4cfe73'."
+}
+```
+Na wat opzoekwerk heb ik het gevraagd aan een medestudent, die wist mij te vertellen dat ik `ansible_ssh_host_key_checking: false` moest toevoegen in het `inventory.yml`-bestand. Nu werkte dit perfect, en heb ik het commando correct kunnen uitvoeren
+```console
+[vagrant@srv001 ansible]$ sudo ansible -i inventory.yml -m ios_facts -a "gather_subset=all" all
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+CSR1kv | SUCCESS => {
+    "ansible_facts": {
+        "ansible_net_all_ipv4_addresses": [
+            "10.0.2.15"
+        ],
+        "ansible_net_all_ipv6_addresses": [],
+        "ansible_net_api": "cliconf",
+        "ansible_net_config":
+        ...
+```
+
 ### Writing the playbook
+
+Het schrijven van het playbook was vrij simpel, omdat deze gegeven was. De executie ervan verliep vlekkeloos.
+```console
+[vagrant@srv001 ansible]$ ansible-playbook -i inventory.yml router-config.yml
+
+PLAY [CSR1kv] *****************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+ok: [CSR1kv]
+
+TASK [Set interface GE2] ******************************************************************************************
+changed: [CSR1kv]
+
+TASK [Enable GE2] *************************************************************************************************
+changed: [CSR1kv]
+
+PLAY RECAP ********************************************************************************************************
+CSR1kv                     : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+Na het toevoegen van de task voor de hostname aan te passen, wat ik snel gevonden heb op het internet, heb ik het playbook opnieuw gerund. Dit werkte opnieuw naar behoren
+```console
+[vagrant@srv001 ansible]$ ansible-playbook -i inventory.yml router-config.yml
+
+PLAY [CSR1kv] *****************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************
+[WARNING]: ansible-pylibssh not installed, falling back to paramiko
+ok: [CSR1kv]
+
+TASK [Set interface GE2] ******************************************************************************************
+ok: [CSR1kv]
+
+TASK [Enable GE2] *************************************************************************************************
+ok: [CSR1kv]
+
+TASK [Change hostname] ********************************************************************************************
+changed: [CSR1kv]
+
+PLAY RECAP ********************************************************************************************************
+CSR1kv                     : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
 
 ## 2.7. Integration: a working LAN
 
-## Reflection
+Ik heb een kali-vdi gedownload, en daarmee een nieuwe VM opgezet in hetzelfde netwerk (met een host-only adapter). Na `ip a` te doen kreeg ik de volgende output:
+```console
+┌──(kali㉿kali)-[~]
+└─$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:7c:5c:7b brd ff:ff:ff:ff:ff:ff
+    inet 172.16.0.2/24 brd 172.16.0.255 scope global dynamic noprefixroute eth0
+       valid_lft 14382sec preferred_lft 14382sec
+    inet6 fe80::e63f:9cf8:5669:222/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+```
+Dan heb ik ervoor gezorgd dat de VM een vast IP-adres kreeg met DHCP, door middel van het volgende in mijn `srv003.yml`-bestand te zetten:
+```yaml
+dhcp_hosts:
+  - name: kali
+    mac: '08:00:27:7c:5c:7b'
+    ip: 172.16.192.1
+```
 
+Na `vagrant provision srv003` uit te voeren, en de NetworkManager te restarten op mijn Kali-VM, kreeg ik dit als resultaat:
+```console
+┌──(kali㉿kali)-[~]
+└─$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:7c:5c:7b brd ff:ff:ff:ff:ff:ff
+    inet 172.16.192.1/24 brd 172.16.192.255 scope global dynamic noprefixroute eth0
+       valid_lft 14397sec preferred_lft 14397sec
+    inet6 fe80::e63f:9cf8:5669:222/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+```
+Ik kon de webserver helaas niet bereiken via `https://www.infra.lan/wordpress/`, maar dit was te verwachten aangezien mijn DNS-server niet naar behoren wou werken. 
+
+Maar na het aanpassen van mijn `srv001.yml`-bestand (met wat inspiratie van die ik van medestudenten heb ontvangen) kreeg ik uiteindelijk toch een zone in mijn `/etc/named.conf` file, maar helaas kon ik de webserver nog steeds niet bereiken, dus heb ik het daar ook bij gelaten.
 ## Resources
 
-List all sources of useful information that you encountered while completing this assignment: books, manuals, HOWTO's, blog posts, etc.
+
+- https://docs.ansible.com/ansible/devel/collections/cisco/ios/ios_hostname_module.html

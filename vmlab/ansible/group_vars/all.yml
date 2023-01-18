@@ -3,9 +3,6 @@
 ---
 ansible_python_interpreter: /usr/libexec/platform-python
 
-ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDamau0N4iBNqneL8GUDQy1H9WdiWe/5Y6m6Kmk0NlmlZOnbv9JpcJ8NjKgLQMls2RdNYz2NjudLUyLx6LF46IJDZeTUI9IBM9hqZXujLLkcY7gPYbWXzy0UH8QgbKBomBqgVUxA9NcJLuGoPngyz90W6qZxrX4nX1iAYxmpcjCQc1ZUufbcAur8suB9Q/2N3DcvCNxOaML7Qwfkbw0uExbUEvPbzPMxYHA9qj1fZ7TmVOTVUojr7TO4vlKHZj2Jd14xV52y/LgBSAGcAexdScYKa0s/KtiWx71P+8LQFcJHljGRyz/1uF5CgvT/VGzxnmMtCY4Po+26pzV/yXp1ef3KT4LjKUpuBAjAjdVo7yHdjck8Qkcqz7r3V+syq6f/IRscxaaqFFvzYxSMPXBCjgxHEJ4DOXV3NZfPbEnKvDLkYMCu/zsYr8i9ua/M3HHHxUfzvh/eL0bU9pbnNlsCPZGnoQGQ6vdfWYTrVQFqUJsPSpxjEFNTJzsS9kTqgx8oC0= cspel@LAPTOP-TJ8H11MP
-
-
 rhbase_repositories:
   - epel-release
 rhbase_install_packages:
@@ -16,3 +13,14 @@ rhbase_install_packages:
   - nano
   - tree
   - wget
+  - php-json
+  - pip
+
+rhbase_users:
+  - name: cedric
+    comment: "User Cedric"
+    groups:
+      - users
+      - wheel
+    password: "$6$WSxPaKMZK2QF5/Md$DhBfaWOINAMPB.8LPS0YKN4Xkx1LuachR.5LpTzZHovs7YNak8NUnoBtQaOSJmsWrSmwbzsyL6uDwQCl3kSI6."
+    ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDamau0N4iBNqneL8GUDQy1H9WdiWe/5Y6m6Kmk0NlmlZOnbv9JpcJ8NjKgLQMls2RdNYz2NjudLUyLx6LF46IJDZeTUI9IBM9hqZXujLLkcY7gPYbWXzy0UH8QgbKBomBqgVUxA9NcJLuGoPngyz90W6qZxrX4nX1iAYxmpcjCQc1ZUufbcAur8suB9Q/2N3DcvCNxOaML7Qwfkbw0uExbUEvPbzPMxYHA9qj1fZ7TmVOTVUojr7TO4vlKHZj2Jd14xV52y/LgBSAGcAexdScYKa0s/KtiWx71P+8LQFcJHljGRyz/1uF5CgvT/VGzxnmMtCY4Po+26pzV/yXp1ef3KT4LjKUpuBAjAjdVo7yHdjck8Qkcqz7r3V+syq6f/IRscxaaqFFvzYxSMPXBCjgxHEJ4DOXV3NZfPbEnKvDLkYMCu/zsYr8i9ua/M3HHHxUfzvh/eL0bU9pbnNlsCPZGnoQGQ6vdfWYTrVQFqUJsPSpxjEFNTJzsS9kTqgx8oC0= cspel@LAPTOP-TJ8H11MP"

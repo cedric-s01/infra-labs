@@ -253,7 +253,7 @@ Be aware that the router VM takes 4 GB of RAM!
 - Boot the VM. You should see a GRUB boot menu. Choose the default option or wait until it is selected automatically.
 - The installation process will now begin. This will probably take a while! The VM will reboot once and the installation-ISO will be ejected. If everything went ok, you should see the following text:
 
-```text
+```console
 *                                           *
 **                                         **
 ***                                       ***
@@ -332,7 +332,7 @@ The `ansible` command can run so-called Ansible modules, the basic building bloc
 
 Now, we will create the playbook to actually configure our router. Create a file `router-config.yml` in the `ansible/` directory (the one containing the `site.yml` playbook).
 
-```console
+```yaml
 # Router configuration playbook
 ---
 - hosts: CSR1kv
@@ -374,7 +374,7 @@ If you boot the VM:
 
 - the DHCP-server should provide it with an IP address in the correct range, the correct IP addresses for the default gateway and DNS server.
 - When you open a web browser in the VM, you should have Internet access
-- You should be able to view the website on `srv010` by entering `https://www.avalon.lan/wordpress/` in the web browser.
+- You should be able to view the website on `srv010` by entering `https://www.infra.lan/wordpress/` in the web browser.
 
 Verify that the IP address is in the correct range (the one reserved for guests with a dynamic IP). Reconfigure the DHCP server so your workstation VM will receive a reserved IP address (also in the correct range!).
 

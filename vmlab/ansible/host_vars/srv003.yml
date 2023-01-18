@@ -1,0 +1,20 @@
+dhcp_global_default_lease_time: 14400 # 8hrs
+
+dhcp_global_subnet_mask: 255.255.255.0
+dhcp_global_broadcast_address: 172.16.255.255
+dhcp_global_domain_name: infra.lan
+dhcp_global_domain_name_servers:
+  - 172.16.128.2
+
+dhcp_subnets:
+  - ip: 172.16.0.0
+    netmask: 255.255.0.0
+    domain_name_servers:
+      - 172.16.128.2
+    routers: 172.16.255.254
+    range_begin: 172.16.0.2
+    range_end: 172.16.127.254
+dhcp_hosts:
+  - name: kali
+    mac: "08:00:27:7c:5c:7b"
+    ip: 172.16.192.1
